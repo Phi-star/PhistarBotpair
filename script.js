@@ -12,11 +12,16 @@ function createBubbles() {
         const bubble = document.createElement('div');
         bubble.classList.add('bubble');
         
+        // Random size between 50px and 200px
         const size = Math.random() * 150 + 50;
         bubble.style.width = `${size}px`;
         bubble.style.height = `${size}px`;
+        
+        // Random position
         bubble.style.left = `${Math.random() * 100}%`;
         bubble.style.top = `${Math.random() * 100}%`;
+        
+        // Random animation duration
         bubble.style.animationDuration = `${Math.random() * 10 + 10}s`;
         bubble.style.animationDelay = `${Math.random() * 5}s`;
         
@@ -33,11 +38,16 @@ function createParticles() {
         const particle = document.createElement('div');
         particle.classList.add('particle');
         
+        // Random size between 1px and 3px
         const size = Math.random() * 2 + 1;
         particle.style.width = `${size}px`;
         particle.style.height = `${size}px`;
+        
+        // Random position
         particle.style.left = `${Math.random() * 100}%`;
         particle.style.top = `${Math.random() * 100}%`;
+        
+        // Random opacity
         particle.style.opacity = Math.random() * 0.5 + 0.1;
         
         particlesContainer.appendChild(particle);
@@ -63,67 +73,64 @@ function copyToClipboard(text, elementId) {
 
 async function connectToWhatsApp(phoneNumber) {
     try {
+        // Show loading state
         document.getElementById('status-message').textContent = 'Connecting to WhatsApp...';
         
-        // In a real implementation, you would call your backend API here
-        // This is an enhanced simulation that includes the session data you provided
+        // Import the required Baileys functions dynamically
+        const { default: makeWASocket, Browsers } = await import('@whiskeysockets/baileys');
         
-        // Simulate getting pairing code
-        setTimeout(() => {
-            pairingCode = Array.from({length: 8}, () => Math.floor(Math.random() * 10)).join('');
-            const formattedCode = pairingCode.replace(/(\d{4})(\d{4})/, '$1-$2');
-            document.getElementById('pairing-code').textContent = formattedCode;
-            document.getElementById('status-message').textContent = 'Enter this code in WhatsApp on your phone';
+        // Create a new WhatsApp connection
+        socket = makeWASocket({
+            printQRInTerminal: false,
+            browser: Browsers.windows('Firefox'),
+            auth: {
+                creds: null, // Will be populated after pairing
+                keys: null
+            }
+        });
+        
+        // Handle connection updates
+        socket.ev.on('connection.update', (update) => {
+            const { connection, qr } = update;
             
-            // Simulate connection after 3 seconds
-            setTimeout(async () => {
+            if (connection === 'open') {
                 document.getElementById('status-message').textContent = 'Connected to WhatsApp!';
-                
-                // Create a simulated session ID based on the provided data
-                sessionId = JSON.stringify({
-                    noiseKey: {
-                        private: "eCBMbHBK5iCWNuNq03mllPZ4DuHmgYdKZ+KoI9HK1Hg=",
-                        public: "1ac6bUncXlUVaTXSJSAGIAdxamU5kH5UkDx9+BIfcSw="
-                    },
-                    pairingEphemeralKeyPair: {
-                        private: "oIlundjRsuHvb1136BPwzOrP9yCAH5a2/pKAkTosgEU=",
-                        public: "CUl7+oPcjS0WQdcMgWTC1euxnhelbmL0DSOKdnZ1O0E="
-                    },
-                    signedIdentityKey: {
-                        private: "INgFyt4wiaXEUt+wTaFI15oZikUjztUSMGqpXW39gXY=",
-                        public: "CvoxBGyS+MW62UXbHSSEZ1TFKL18XFBLsvH1TmWtYm4="
-                    },
-                    signedPreKey: {
-                        keyPair: {
-                            private: "0BWhZfrgO+qn2WBHsS4eM/4a9jGQHOvoVelUILy2sVo=",
-                            public: "hDSNo4/Jd5Y5xXK8xEaT6RDXJ2ti4iE1e/48x7o/ow4="
-                        },
-                        signature: "CBdQsO+9Bd2qYPXJO6HE+UGjqDGpdI0sDRNQEZYowrbS31gXpL2dUE31kurWCG7Ngt/anWDUBiM1Gx8oMp1WCA==",
-                        keyId: 1
-                    },
-                    registrationId: 23,
-                    advSecretKey: "e9FMYUws0nH11wtoZXE5WRCv23wp3zshF1KljdoEH7Q=",
-                    deviceId: "9aOPaVm_SQOrRJ3_XSn7cw",
-                    phoneId: "01944560-29c8-4d11-8ff2-e46ca8d30e52",
-                    identityId: "BJAYEF/kB5+N71ODWNO2a2uJcCY=",
-                    platform: "smba"
-                }, null, 2);
-
+                sessionId = JSON.stringify(socket.authState.creds);
                 document.getElementById('session-id').textContent = sessionId;
                 
+                // Show session card
                 document.getElementById('qr-card').classList.add('hidden');
                 document.getElementById('session-card').classList.remove('hidden');
                 
-                // Simulate sending message to WhatsApp
-                const confirmationMessage = `PHISTAR BOT Session Established\n\nSession ID:\n${sessionId}\n\nKeep this safe!`;
-                console.log(`Message sent to ${phoneNumber}:`, confirmationMessage);
-                
-            }, 3000);
-        }, 1500);
+                // Send confirmation message to the user's WhatsApp
+                sendWhatsAppMessage(phoneNumber, `Your session ID: ${sessionId}`);
+            }
+            else if (qr) {
+                // Format the QR code as a pairing code
+                pairingCode = qr.replace(/(\d{4})(\d{4})/, '$1-$2');
+                document.getElementById('pairing-code').textContent = pairingCode;
+                document.getElementById('status-message').textContent = 'Enter this code in WhatsApp on your phone';
+            }
+        });
+        
+        // Request pairing code
+        pairingCode = await socket.requestPairingCode(phoneNumber);
+        const formattedCode = pairingCode.match(/.{1,4}/g).join('-');
+        document.getElementById('pairing-code').textContent = formattedCode;
         
     } catch (error) {
         console.error('Connection error:', error);
         document.getElementById('status-message').textContent = `Error: ${error.message}`;
+    }
+}
+
+async function sendWhatsAppMessage(number, message) {
+    try {
+        const jid = `${number}@s.whatsapp.net`;
+        await socket.sendMessage(jid, { text: message });
+        console.log('Message sent successfully');
+    } catch (error) {
+        console.error('Failed to send message:', error);
     }
 }
 
