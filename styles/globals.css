@@ -1,0 +1,28 @@
+/* styles/globals.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+    background: linear-gradient(to bottom, #f3f4f6, #e5e7eb);
+}
+
+input:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+}
+
+button:hover {
+    transform: translateY(-1px);
+}
+
+.success {
+    color: #16a34a;
+    font-weight: 500;
+}
+
+.error {
+    color: #dc2626;
+    font-weight: 500;
+}
