@@ -1,12 +1,6 @@
 // server.js
 import express from 'express';
-import {
-    default: makeWASocket,
-    DisconnectReason,
-    makeCacheableSignalKeyStore,
-    fetchLatestBaileysVersion,
-    Browsers
-} from '@whiskeysockets/baileys';
+import { makeWASocket, DisconnectReason, makeCacheableSignalKeyStore, fetchLatestBaileysVersion, Browsers } from '@whiskeysockets/baileys';
 import { Boom } from '@hapi/boom';
 import pino from 'pino';
 import NodeCache from 'node-cache';
